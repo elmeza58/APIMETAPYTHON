@@ -51,9 +51,12 @@ TOKEN_ANDERCODE = 'ANDERCODE'
 
 @app.route('/webhook', methods=['GET', 'POST']) # type: ignore
 def webhook():
-    if request.method == 'POST':
+    if request.method == 'GET':
         challenge = verificar_token(request)
-        return challenge
+    elif request.method == 'POST':
+        response = recibir_mensaje(request)
+        return response
+        
 
 def verificar_token(req):
     token = req.args.get('hub.verify_token')
