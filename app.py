@@ -52,8 +52,8 @@ def webhook():
         challenge = verificar_token(request)
         return challenge
     elif request.method == 'POST':
-        response = recibir_mensajes(request)
-        return response
+        reponse = recibir_mensajes(request)
+        return reponse
 
 def verificar_token(req):
     token = req.args.get('hub.verify_token')
@@ -67,7 +67,7 @@ def verificar_token(req):
 def recibir_mensajes(req):
     try:
         req = request.get_json()
-        entry = req['entry'][0]
+        entry =req['entry'][0]
         changes = entry['changes'][0]
         value = changes['value']
         objeto_mensaje = value['messages']
@@ -78,22 +78,38 @@ def recibir_mensajes(req):
             if "type" in messages:
                 tipo = messages["type"]
 
+                #Guardar Log en la BD
+                agregar_mensajes_log(json.dumps(messages))
+
                 if tipo == "interactive":
-                    return 0
-                
+                    tipo_interactivo = messages["interactive"]["type"]
+
+                    if tipo_interactivo == "button_reply":
+                        text = messages["interactive"]["button_reply"]["id"]
+                        numero = messages["from"]
+
+                        enviar_mensajes_whatsapp(text,numero)
+                    
+                    elif tipo_interactivo == "list_reply":
+                        text = messages["interactive"]["list_reply"]["id"]
+                        numero = messages["from"]
+
+                        enviar_mensajes_whatsapp(text,numero)
+
                 if "text" in messages:
                     text = messages["text"]["body"]
                     numero = messages["from"]
 
-                    enviar_mensajes_whatsapp(text, numero)
-                         
+                    enviar_mensajes_whatsapp(text,numero)
 
-        return jsonify({'message': 'EVENT_RECEIVED'})
+                    #Guardar Log en la BD
+                    agregar_mensajes_log(json.dumps(messages))
+
+        return jsonify({'message':'EVENT_RECEIVED'})
     except Exception as e:
         return jsonify({'message':'EVENT_RECEIVED'})
 
-
-def enviar_mensajes_whatsapp(texto, number):
+def enviar_mensajes_whatsapp(texto,number):
     texto = texto.lower()
 
     if "hola" in texto:
@@ -107,7 +123,82 @@ def enviar_mensajes_whatsapp(texto, number):
                 "body": "🚀 Hola, ¿Cómo estás? Bienvenido."
             }
         }
-    else:
+    elif "1" in texto:
+        data = {
+            "messaging_product": "whatsapp",
+            "recipient_type": "individual",
+            "to": number,
+            "type": "text",
+            "text": {
+                "preview_url": False,
+                "body": "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum."
+            }
+        }
+    elif "2" in texto:
+        data = {
+            "messaging_product": "whatsapp",
+            "to": number,
+            "type": "location",
+            "location": {
+                "latitude": "-12.067158831865067",
+                "longitude": "-77.03377940839486",
+                "name": "Estadio Nacional del Perú",
+                "address": "Cercado de Lima"
+            }
+        }
+    elif "3" in texto:
+        data={
+            "messaging_product": "whatsapp",
+            "recipient_type": "individual",
+            "to": number,
+            "type": "document",
+            "document": {
+                    "link": "https://www.turnerlibros.com/wp-content/uploads/2021/02/ejemplo.pdf",
+                    "caption": "Temario del Curso #001"
+                }
+            }
+    elif "4" in texto:
+        data={
+            "messaging_product": "whatsapp",
+            "recipient_type": "individual",
+            "to": number,
+            "type": "audio",
+            "audio": {
+                "link": "https://filesamples.com/samples/audio/mp3/sample1.mp3"
+            }
+        }
+    elif "5" in texto:
+        data = {
+            "messaging_product": "whatsapp",
+            "to": number,
+            "text": {
+                "preview_url": True,
+                "body": "Introduccion al curso! https://youtu.be/6ULOE2tGlBM"
+            }
+        }
+    elif "6" in texto:
+        data = {
+            "messaging_product": "whatsapp",
+            "recipient_type": "individual",
+            "to": number,
+            "type": "text",
+            "text": {
+                "preview_url": False,
+                "body": "🤝 En breve me pondre en contacto contigo. 🤓"
+            }
+        }
+    elif "7" in texto:
+        data = {
+            "messaging_product": "whatsapp",
+            "recipient_type": "individual",
+            "to": number,
+            "type": "text",
+            "text": {
+                "preview_url": False,
+                "body": "📅 Horario de Atención : Lunes a Viernes. \n🕜 Horario : 9:00 am a 5:00 pm 🤓"
+            }
+        }
+    elif "0" in texto:
         data = {
             "messaging_product": "whatsapp",
             "recipient_type": "individual",
@@ -118,13 +209,167 @@ def enviar_mensajes_whatsapp(texto, number):
                 "body": "🚀 Hola, visita mi web anderson-bastidas.com para más información.\n \n📌Por favor, ingresa un número #️⃣ para recibir información.\n \n1️⃣. Información del Curso. ❔\n2️⃣. Ubicación del local. 📍\n3️⃣. Enviar temario en PDF. 📄\n4️⃣. Audio explicando curso. 🎧\n5️⃣. Video de Introducción. ⏯️\n6️⃣. Hablar con AnderCode. 🙋‍♂️\n7️⃣. Horario de Atención. 🕜 \n0️⃣. Regresar al Menú. 🕜"
             }
         }
-    
-    # Convertir el diccionario a formato JSON
-    data = json.dumps(data)
+    elif "boton" in texto:
+        data = {
+            "messaging_product": "whatsapp",
+            "recipient_type": "individual",
+            "to": number,
+            "type": "interactive",
+            "interactive":{
+                "type":"button",
+                "body": {
+                    "text": "¿Confirmas tu registro?"
+                },
+                "footer": {
+                    "text": "Selecciona una de las opciones"
+                },
+                "action": {
+                    "buttons":[
+                        {
+                            "type": "reply",
+                            "reply":{
+                                "id":"btnsi",
+                                "title":"Si"
+                            }
+                        },{
+                            "type": "reply",
+                            "reply":{
+                                "id":"btnno",
+                                "title":"No"
+                            }
+                        },{
+                            "type": "reply",
+                            "reply":{
+                                "id":"btntalvez",
+                                "title":"Tal Vez"
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    elif "btnsi" in texto:
+        data = {
+            "messaging_product": "whatsapp",
+            "recipient_type": "individual",
+            "to": number,
+            "type": "text",
+            "text": {
+                "preview_url": False,
+                "body": "Muchas Gracias por Aceptar."
+            }
+        }
+    elif "btnno" in texto:
+        data = {
+            "messaging_product": "whatsapp",
+            "recipient_type": "individual",
+            "to": number,
+            "type": "text",
+            "text": {
+                "preview_url": False,
+                "body": "Es una Lastima."
+            }
+        }
+    elif "btntalvez" in texto:
+        data = {
+            "messaging_product": "whatsapp",
+            "recipient_type": "individual",
+            "to": number,
+            "type": "text",
+            "text": {
+                "preview_url": False,
+                "body": "Estare a la espera."
+            }
+        }
+    elif "lista" in texto:
+        data ={
+            "messaging_product": "whatsapp",
+            "to": number,
+            "type": "interactive",
+            "interactive":{
+                "type" : "list",
+                "body": {
+                    "text": "Selecciona Alguna Opción"
+                },
+                "footer": {
+                    "text": "Selecciona una de las opciones para poder ayudarte"
+                },
+                "action":{
+                    "button":"Ver Opciones",
+                    "sections":[
+                        {
+                            "title":"Compra y Venta",
+                            "rows":[
+                                {
+                                    "id":"btncompra",
+                                    "title" : "Comprar",
+                                    "description": "Compra los mejores articulos de tecnologia"
+                                },
+                                {
+                                    "id":"btnvender",
+                                    "title" : "Vender",
+                                    "description": "Vende lo que ya no estes usando"
+                                }
+                            ]
+                        },{
+                            "title":"Distribución y Entrega",
+                            "rows":[
+                                {
+                                    "id":"btndireccion",
+                                    "title" : "Local",
+                                    "description": "Puedes visitar nuestro local."
+                                },
+                                {
+                                    "id":"btnentrega",
+                                    "title" : "Entrega",
+                                    "description": "La entrega se realiza todos los dias."
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        }
+    elif "btncompra" in texto:
+        data = {
+            "messaging_product": "whatsapp",
+            "recipient_type": "individual",
+            "to": number,
+            "type": "text",
+            "text": {
+                "preview_url": False,
+                "body": "Los mejos articulos top en ofertas."
+            }
+        }
+    elif "btnvender" in texto:
+        data = {
+            "messaging_product": "whatsapp",
+            "recipient_type": "individual",
+            "to": number,
+            "type": "text",
+            "text": {
+                "preview_url": False,
+                "body": "Excelente elección."
+            }
+        }
+    else:
+        data={
+            "messaging_product": "whatsapp",
+            "recipient_type": "individual",
+            "to": number,
+            "type": "text",
+            "text": {
+                "preview_url": False,
+                "body": "🚀 Hola, visita mi web anderson-bastidas.com para más información.\n \n📌Por favor, ingresa un número #️⃣ para recibir información.\n \n1️⃣. Información del Curso. ❔\n2️⃣. Ubicación del local. 📍\n3️⃣. Enviar temario en PDF. 📄\n4️⃣. Audio explicando curso. 🎧\n5️⃣. Video de Introducción. ⏯️\n6️⃣. Hablar con AnderCode. 🙋‍♂️\n7️⃣. Horario de Atención. 🕜 \n0️⃣. Regresar al Menú. 🕜"
+            }
+        }
+
+    #Convertir el diccionaria a formato JSON
+    data=json.dumps(data)
 
     headers = {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer EAAS261hbLIMBQ8HsCSDdxzGdYrWe16NJaa4Lgk0IlHwVAecCyQz7tOSGmL3qTLdk0bZC2qbRhO9ai5ZB3GmiJjulpUWSn7fuPUoxMiorQ7ZCuWbP16YBgLQPhY3CHieRsXImCcCVqs1XIA12VmNqnSlR0NTDNKJskFEcITybPIacsdAiWcFsXTo6b42jLIRc4ZB3ZCSpN5pq6g2OLQM8mPTOPBZChqZAFypmD78C9PVMbx9ZCMjAzDg5tZCFZBiH0046LqCYwztM6JqP3yBmvyT0mLcQZDZD"
+        "Content-Type" : "application/json",
+        "Authorization" : "BearerEAAS261hbLIMBQ8HsCSDdxzGdYrWe16NJaa4Lgk0IlHwVAecCyQz7tOSGmL3qTLdk0bZC2qbRhO9ai5ZB3GmiJjulpUWSn7fuPUoxMiorQ7ZCuWbP16YBgLQPhY3CHieRsXImCcCVqs1XIA12VmNqnSlR0NTDNKJskFEcITybPIacsdAiWcFsXTo6b42jLIRc4ZB3ZCSpN5pq6g2OLQM8mPTOPBZChqZAFypmD78C9PVMbx9ZCMjAzDg5tZCFZBiH0046LqCYwztM6JqP3yBmvyT0mLcQZDZD"
     }
 
     connection = http.client.HTTPSConnection("graph.facebook.com")
