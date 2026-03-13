@@ -45,7 +45,7 @@ mensajes_log=[]
 def agregar_mensajes_log(texto):
     mensajes_log.append(texto)
 
-    
+        
 # Token de verificacion para la configuraion
 TOKEN_ANDERCODE = 'ANDERCODE'
 
@@ -56,7 +56,7 @@ def webhook():
     elif request.method == 'POST':
         response = recibir_mensaje(request)
         return response
-        
+            
 
 def verificar_token(req):
     token = req.args.get('hub.verify_token')
@@ -71,10 +71,10 @@ def recibir_mensaje(req):
     req = request.get_json()
     agregar_mensajes_log(req)
     return jsonify({'message':'EVENT_RECEIVED'})
-    
+        
 
 
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=80, debug=True)
+    app.run(host='0.0.0.0', port=80,debug=True)
